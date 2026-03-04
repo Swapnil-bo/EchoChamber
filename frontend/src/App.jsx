@@ -109,7 +109,7 @@ export default function App() {
 
       {/* Cold start banner */}
       {waking && !backendReady && (
-        <div className="mb-6 px-6 py-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl text-yellow-300 text-sm text-center max-w-md">
+        <div className="mb-6 px-6 py-3 bg-white/[0.03] border border-white/10 rounded-xl text-gray-400 text-sm text-center max-w-md">
           Backend is waking up from sleep. This may take 30 seconds on first
           load...
         </div>
