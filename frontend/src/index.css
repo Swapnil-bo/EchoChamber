@@ -25,3 +25,19 @@ body {
 .animate-pulse-glow {
   animation: pulse-glow 1.5s ease-in-out infinite;
 }
+
+/* Soundwave animation — bars oscillate at different heights */
+@keyframes soundwave {
+  0%,
+  100% {
+    height: 8px;
+  }
+  50% {
+    height: 28px;
+  }
+}
+
+.soundwave-bar {
+  height: 8px;
+  animation: soundwave 1.2s ease-in-out infinite;
+}

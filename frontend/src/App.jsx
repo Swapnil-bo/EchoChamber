@@ -90,6 +90,18 @@ export default function App() {
         <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
           EchoChamber
         </h1>
+
+        {/* Animated sound wave */}
+        <div className="flex items-end justify-center gap-[3px] mt-4 h-8">
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
+            <span
+              key={i}
+              className="inline-block w-[3px] rounded-full bg-gradient-to-t from-purple-500 to-pink-400 soundwave-bar"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            />
+          ))}
+        </div>
+
         <p className="text-gray-400 mt-3 text-lg">
           Transform any article into a 5-minute AI podcast
         </p>
