@@ -13,33 +13,33 @@ for 10-20 seconds, causing /status polling to hang and timeout.
 import os
 import shutil
 
-from pydub import AudioSegment
-from pydub import effects
-from pydub.utils import mediainfo_json
-
-# Ensure pydub can find ffmpeg and ffprobe — check common locations if not on PATH
-def _find_ffmpeg():
-    """Auto-detect ffmpeg/ffprobe binaries for pydub on systems where they're not on PATH."""
+# Ensure ffmpeg/ffprobe are on PATH before pydub imports.
+# pydub uses shutil.which() at import time and in mediainfo_json(),
+# so the directory must be on PATH — setting AudioSegment.converter alone
+# is not enough because pydub.utils.mediainfo_json resolves ffprobe via PATH.
+def _ensure_ffmpeg_on_path():
+    """Add ffmpeg directory to PATH if not already available."""
     if shutil.which("ffmpeg") and shutil.which("ffprobe"):
         return
 
     ext = ".exe" if os.name == "nt" else ""
     candidates = [
-        os.path.join(os.environ.get("APPDATA", ""), "npm", "node_modules", "ffmpeg-static"),
+        # Full ffmpeg bundle (includes ffprobe)
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), "ffmpeg", "ffmpeg-master-latest-win64-gpl", "bin"),
         os.path.join(os.environ.get("LOCALAPPDATA", ""), "ffmpeg", "bin"),
         os.path.join(os.environ.get("PROGRAMFILES", ""), "ffmpeg", "bin"),
+        # npm ffmpeg-static (ffmpeg only, no ffprobe — fallback)
+        os.path.join(os.environ.get("APPDATA", ""), "npm", "node_modules", "ffmpeg-static"),
     ]
     for d in candidates:
-        ffmpeg = os.path.join(d, f"ffmpeg{ext}")
-        ffprobe = os.path.join(d, f"ffprobe{ext}")
-        if os.path.isfile(ffmpeg):
-            AudioSegment.converter = ffmpeg
-            # ffprobe may be a copy of ffmpeg or a separate binary
-            if os.path.isfile(ffprobe):
-                AudioSegment.ffprobe = ffprobe
+        if os.path.isfile(os.path.join(d, f"ffmpeg{ext}")):
+            os.environ["PATH"] = d + os.pathsep + os.environ.get("PATH", "")
             break
 
-_find_ffmpeg()
+_ensure_ffmpeg_on_path()
+
+from pydub import AudioSegment
+from pydub import effects
 
 SILENCE_BETWEEN_LINES = 500   # ms — prevents robotic, rushed feel
 INTRO_FADE_DURATION = 3000    # ms — music fades under first spoken line
