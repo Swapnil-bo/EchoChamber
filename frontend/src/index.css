@@ -41,3 +41,27 @@ body {
   height: 8px;
   animation: soundwave 1.2s ease-in-out infinite;
 }
+
+/* Rotating gradient border for focused input */
+@property --gradient-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gradient-spin {
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+.gradient-border-spin {
+  background: conic-gradient(
+    from var(--gradient-angle),
+    #a855f7,
+    #ec4899,
+    #f97316,
+    #a855f7
+  );
+  animation: gradient-spin 3s linear infinite;
+}

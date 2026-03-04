@@ -7,6 +7,7 @@ import { useState } from "react";
 export default function InputForm({ onSubmit }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,14 +26,24 @@ export default function InputForm({ onSubmit }) {
         >
           Paste a URL, Wikipedia link, or article text
         </label>
-        <textarea
-          id="input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="https://en.wikipedia.org/wiki/Artificial_intelligence"
-          rows={4}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 resize-none"
-        />
+        <div
+          className={`rounded-xl p-[1px] transition-all duration-300 ${
+            focused
+              ? "bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 gradient-border-spin"
+              : "bg-white/10"
+          }`}
+        >
+          <textarea
+            id="input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            placeholder="https://en.wikipedia.org/wiki/Artificial_intelligence"
+            rows={4}
+            className="w-full bg-gray-950 rounded-[11px] px-4 py-3 text-white placeholder-gray-500 focus:outline-none resize-none"
+          />
+        </div>
         <p className="text-xs text-gray-500 mt-2">
           Supports: Any URL, Wikipedia pages, PDF file paths, or raw text
         </p>
