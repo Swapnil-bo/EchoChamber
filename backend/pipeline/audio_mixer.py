@@ -10,8 +10,36 @@ Never call directly in a FastAPI async context — it blocks the event loop
 for 10-20 seconds, causing /status polling to hang and timeout.
 """
 
+import os
+import shutil
+
 from pydub import AudioSegment
 from pydub import effects
+from pydub.utils import mediainfo_json
+
+# Ensure pydub can find ffmpeg and ffprobe — check common locations if not on PATH
+def _find_ffmpeg():
+    """Auto-detect ffmpeg/ffprobe binaries for pydub on systems where they're not on PATH."""
+    if shutil.which("ffmpeg") and shutil.which("ffprobe"):
+        return
+
+    ext = ".exe" if os.name == "nt" else ""
+    candidates = [
+        os.path.join(os.environ.get("APPDATA", ""), "npm", "node_modules", "ffmpeg-static"),
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), "ffmpeg", "bin"),
+        os.path.join(os.environ.get("PROGRAMFILES", ""), "ffmpeg", "bin"),
+    ]
+    for d in candidates:
+        ffmpeg = os.path.join(d, f"ffmpeg{ext}")
+        ffprobe = os.path.join(d, f"ffprobe{ext}")
+        if os.path.isfile(ffmpeg):
+            AudioSegment.converter = ffmpeg
+            # ffprobe may be a copy of ffmpeg or a separate binary
+            if os.path.isfile(ffprobe):
+                AudioSegment.ffprobe = ffprobe
+            break
+
+_find_ffmpeg()
 
 SILENCE_BETWEEN_LINES = 500   # ms — prevents robotic, rushed feel
 INTRO_FADE_DURATION = 3000    # ms — music fades under first spoken line
