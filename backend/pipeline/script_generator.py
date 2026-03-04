@@ -1,27 +1,19 @@
 """
-Podcast script generation via a single Gemini 2.0 Flash call.
+Podcast script generation via a single Gemini call.
 
 Design decision: one structured call, not two separate agent calls.
 - 50% less API quota
 - More coherent dialogue (model sees both sides simultaneously)
 - Simpler error handling (single try/except)
+
+Uses the google.genai SDK (current, replaces deprecated google.generativeai).
 """
 
 import json
 import os
 
-import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
-
-# BLOCK_ONLY_HIGH — not BLOCK_NONE.
-# Handles controversial/political articles while blocking genuinely harmful content.
-# BLOCK_NONE is a security smell in public-facing portfolio apps.
-SAFETY_SETTINGS = {
-    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-}
+from google import genai
+from google.genai import types
 
 SYSTEM_PROMPT = """You are a podcast script writer. Given the following article text, generate a
 lively, argumentative 5-minute podcast dialogue between two hosts:
@@ -53,13 +45,28 @@ def generate_script(summarized_text: str) -> list:
     Returns a list of dicts with 'speaker' and 'line' keys.
     Raises ValueError on safety blocks or invalid JSON output.
     """
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
     prompt = f"{SYSTEM_PROMPT}\n\n---\n\nArticle text:\n{summarized_text}"
 
+    # BLOCK_ONLY_HIGH — not OFF.
+    # Handles controversial/political articles while blocking genuinely harmful content.
+    # OFF is a security smell in public-facing portfolio apps.
+    safety_settings = [
+        types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_ONLY_HIGH"),
+        types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_ONLY_HIGH"),
+        types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_ONLY_HIGH"),
+        types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_ONLY_HIGH"),
+    ]
+
     try:
-        response = model.generate_content(prompt, safety_settings=SAFETY_SETTINGS)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=types.GenerateContentConfig(safety_settings=safety_settings),
+        )
+
         # Strip markdown code fences if Gemini wraps the response
         text = response.text.strip()
         if text.startswith("```"):
@@ -70,11 +77,15 @@ def generate_script(summarized_text: str) -> list:
         script = json.loads(text)
         return script
 
-    except genai.types.StopCandidateException:
-        raise ValueError(
-            "Content blocked by AI safety filters. Try a different article."
-        )
-    except json.JSONDecodeError:
-        raise ValueError(
-            "Script generation returned invalid format. Please retry."
-        )
+    except Exception as e:
+        error_msg = str(e)
+        if "block" in error_msg.lower() or "safety" in error_msg.lower():
+            raise ValueError(
+                "Content blocked by AI safety filters. Try a different article."
+            )
+        elif "json" in error_msg.lower():
+            raise ValueError(
+                "Script generation returned invalid format. Please retry."
+            )
+        else:
+            raise
