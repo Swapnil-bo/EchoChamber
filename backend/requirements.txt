@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+beautifulsoup4
+PyMuPDF
+wikipedia-api
+langchain
+langchain-google-genai
+google-generativeai
+edge-tts
+pydub
+tenacity
