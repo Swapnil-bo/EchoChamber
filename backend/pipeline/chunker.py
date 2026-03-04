@@ -43,7 +43,7 @@ def chunk_and_summarize(text: str) -> str:
 
     # Text exceeds limit — map-reduce summarization via Gemini Flash
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
         google_api_key=os.getenv("GEMINI_API_KEY"),
         temperature=0.3,
     )
