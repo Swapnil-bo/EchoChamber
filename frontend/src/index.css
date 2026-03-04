@@ -6,6 +6,22 @@ body {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
 }
 
+/* Subtle dark gradient background — replaces flat bg-gray-950 */
+.bg-dark-gradient {
+  background: radial-gradient(
+      ellipse at 50% 0%,
+      rgba(88, 28, 135, 0.15) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse at 80% 50%,
+      rgba(157, 23, 77, 0.08) 0%,
+      transparent 50%
+    ),
+    #030712;
+  background-attachment: fixed;
+}
+
 /* Glass-box card effect for components */
 .glass-card {
   @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl;
