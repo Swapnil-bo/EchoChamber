@@ -41,7 +41,7 @@ export default function InputForm({ onSubmit }) {
       <button
         type="submit"
         disabled={loading || !input.trim()}
-        className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
+        className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-400 hover:via-pink-400 hover:to-orange-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-purple-500/20"
       >
         {loading ? "Starting..." : "Generate Podcast"}
       </button>
