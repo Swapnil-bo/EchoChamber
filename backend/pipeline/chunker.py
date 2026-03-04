@@ -2,25 +2,26 @@
 Text chunking and summarization.
 
 Uses LangChain RecursiveCharacterTextSplitter for chunking.
-If word count exceeds 1500 after splitting, summarizes each chunk via
-Gemini Flash and combines results (map-reduce pattern). This handles
-the 50-page PDF edge case cleanly without exceeding Gemini's context window.
+If word count exceeds 1500 after splitting, sends the first ~8000 words
+to Gemini in a single summarization call. This keeps API usage to exactly
+1 call regardless of article length — critical for free tier quota.
 """
 
 import os
 
-from langchain_core.prompts import PromptTemplate
+from google import genai
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 WORD_LIMIT = 1500
 
-MAP_PROMPT = PromptTemplate.from_template(
-    "Summarize the following text concisely, preserving key facts and arguments:\n\n{text}"
-)
+# Gemini context windows are large — 8000 words is safe for all models
+MAX_INPUT_WORDS = 8000
 
-REDUCE_PROMPT = PromptTemplate.from_template(
-    "Combine these summaries into a single coherent summary under 1500 words:\n\n{text}"
+SUMMARIZE_PROMPT = (
+    "Summarize the following article text into a comprehensive summary of "
+    "approximately 1200-1500 words. Preserve key facts, arguments, dates, "
+    "names, and statistics. The summary will be used to generate a podcast "
+    "script, so keep it informative and engaging.\n\n{text}"
 )
 
 
@@ -29,6 +30,9 @@ def chunk_and_summarize(text: str) -> str:
 
     Returns text ready for script generation, guaranteed to be under
     WORD_LIMIT words. Short texts pass through unchanged.
+
+    For long texts, truncates to MAX_INPUT_WORDS then summarizes in a
+    single Gemini call instead of map-reduce (saves API quota).
     """
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=2000,
@@ -41,23 +45,15 @@ def chunk_and_summarize(text: str) -> str:
     if word_count <= WORD_LIMIT:
         return combined
 
-    # Text exceeds limit — map-reduce summarization via Gemini Flash
-    llm = ChatGoogleGenerativeAI(
-        model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        temperature=0.3,
-    )
+    # Truncate to MAX_INPUT_WORDS to keep it within a single Gemini call.
+    words = combined.split()
+    if len(words) > MAX_INPUT_WORDS:
+        combined = " ".join(words[:MAX_INPUT_WORDS])
 
-    # Map: summarize each chunk independently
-    summaries = []
-    for chunk in chunks:
-        prompt = MAP_PROMPT.format(text=chunk)
-        response = llm.invoke(prompt)
-        summaries.append(response.content)
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
-    # Reduce: combine all summaries into one
-    combined_summaries = "\n\n".join(summaries)
-    reduce_prompt = REDUCE_PROMPT.format(text=combined_summaries)
-    final = llm.invoke(reduce_prompt)
+    prompt = SUMMARIZE_PROMPT.format(text=combined)
+    response = client.models.generate_content(model=model_name, contents=prompt)
 
-    return final.content
+    return response.text
