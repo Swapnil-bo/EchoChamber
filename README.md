@@ -279,6 +279,12 @@ The final MP3 is served at `/audio/{job_id}.mp3`. The frontend receives both the
 
 <div align="center">
 
-Built as a portfolio project for AI/ML Product Management roles.
+### Built for the 100 Days of Vibe Coding Challenge 🚀
+
+A portfolio project by [Swapnil Hazra](https://github.com/Swapnil-bo) targeting AI/ML Product Management roles.
+
+*Every architectural decision in this project was deliberately chosen and is explainable in an interview.*
+
+**If you found this useful, drop a ⭐**
 
 </div>
