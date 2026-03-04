@@ -17,6 +17,9 @@ venv/
 node_modules/
 dist/
 
+# Claude Code
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
