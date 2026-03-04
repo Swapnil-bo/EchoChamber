@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* Glass-box card effect for components */
+.glass-card {
+  @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl;
+}
+
+/* Pulsing animation for active pipeline stage */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
