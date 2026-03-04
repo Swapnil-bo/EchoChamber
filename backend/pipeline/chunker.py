@@ -2,19 +2,26 @@
 Text chunking and summarization.
 
 Uses LangChain RecursiveCharacterTextSplitter for chunking.
-If word count exceeds 1500 after splitting, uses LangChain map_reduce
-with Gemini Flash to compress. This handles the 50-page PDF edge case
-cleanly without crashing the pipeline or exceeding Gemini's context window.
+If word count exceeds 1500 after splitting, summarizes each chunk via
+Gemini Flash and combines results (map-reduce pattern). This handles
+the 50-page PDF edge case cleanly without exceeding Gemini's context window.
 """
 
 import os
 
-from langchain.chains.summarize import load_summarize_chain
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
+from langchain_core.prompts import PromptTemplate
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 WORD_LIMIT = 1500
+
+MAP_PROMPT = PromptTemplate.from_template(
+    "Summarize the following text concisely, preserving key facts and arguments:\n\n{text}"
+)
+
+REDUCE_PROMPT = PromptTemplate.from_template(
+    "Combine these summaries into a single coherent summary under 1500 words:\n\n{text}"
+)
 
 
 def chunk_and_summarize(text: str) -> str:
@@ -34,15 +41,23 @@ def chunk_and_summarize(text: str) -> str:
     if word_count <= WORD_LIMIT:
         return combined
 
-    # Text exceeds limit — use map_reduce summarization via Gemini Flash
+    # Text exceeds limit — map-reduce summarization via Gemini Flash
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
         google_api_key=os.getenv("GEMINI_API_KEY"),
         temperature=0.3,
     )
 
-    docs = [Document(page_content=chunk) for chunk in chunks]
-    chain = load_summarize_chain(llm, chain_type="map_reduce")
-    result = chain.invoke(docs)
+    # Map: summarize each chunk independently
+    summaries = []
+    for chunk in chunks:
+        prompt = MAP_PROMPT.format(text=chunk)
+        response = llm.invoke(prompt)
+        summaries.append(response.content)
 
-    return result["output_text"]
+    # Reduce: combine all summaries into one
+    combined_summaries = "\n\n".join(summaries)
+    reduce_prompt = REDUCE_PROMPT.format(text=combined_summaries)
+    final = llm.invoke(reduce_prompt)
+
+    return final.content

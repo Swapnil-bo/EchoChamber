@@ -6,6 +6,8 @@ beautifulsoup4
 PyMuPDF
 wikipedia-api
 langchain
+langchain-core
+langchain-text-splitters
 langchain-google-genai
 google-generativeai
 edge-tts
