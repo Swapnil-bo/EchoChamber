@@ -9,6 +9,12 @@ export default function InputForm({ onSubmit }) {
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(false);
 
+  const examples = [
+    { label: "Wikipedia", value: "https://en.wikipedia.org/wiki/Artificial_intelligence" },
+    { label: "URL", value: "https://www.paulgraham.com/greatwork.html" },
+    { label: "PDF", value: "research_paper.pdf" },
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -44,9 +50,19 @@ export default function InputForm({ onSubmit }) {
             className="w-full bg-gray-950 rounded-[11px] px-4 py-3 text-white placeholder-gray-500 focus:outline-none resize-none"
           />
         </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Supports: Any URL, Wikipedia pages, PDF file paths, or raw text
-        </p>
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-xs text-gray-500">Try:</span>
+          {examples.map((ex) => (
+            <button
+              key={ex.label}
+              type="button"
+              onClick={() => setInput(ex.value)}
+              className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-purple-500/50 hover:bg-purple-500/10 transition-all duration-200"
+            >
+              {ex.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <button
